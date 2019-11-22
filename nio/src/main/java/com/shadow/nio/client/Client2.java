@@ -12,6 +12,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
+/**
+ * No tracked branch configured for branch master or the branch doesn't exist.
+ * To make your branch track a remote branch call,
+ * for example,
+ * git branch --set-upstream-to=origin/master master
+ */
 public class Client2 {
 
     private SocketChannel socketChannel;
