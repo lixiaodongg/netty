@@ -20,50 +20,83 @@ public class Server {
             serverSocketChannel = ServerSocketChannel.open();
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.bind(new InetSocketAddress(9998)); //绑定端口
+            serverSocketChannel.bind(new InetSocketAddress(8888)); //绑定端口
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("服务器启动成功");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void run() {
+    public void listen() {
         while (true) {
             int select = 0;
             try {
-                select = selector.select(1000);
+                select = selector.select();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             if (select == 0) {
-                System.out.println("服务器等待了1喵");
                 continue;
             }
-
             Set<SelectionKey> selectionKeys = selector.selectedKeys();
             Iterator<SelectionKey> iterator = selectionKeys.iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
                 if (key.isAcceptable()) {
                     try {
-                        SocketChannel accept = serverSocketChannel.accept();
-                        accept.register(selector, SelectionKey.OP_ACCEPT, ByteBuffer.allocate(1024));
-                        accept.register(selector, SelectionKey.OP_READ);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else if (key.isReadable()) {
-                    SocketChannel channel = (SocketChannel) key.channel();
-                    ByteBuffer buffer = ByteBuffer.allocate(1024);
-                    try {
-                        channel.read(buffer);
-                        buffer.flip();
-                        String read = new String(buffer.array(), 0, buffer.limit());
-                        System.out.println(read);
+                        accept();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
+                if (key.isValid() && key.isReadable()) {
+                    readMsg(key);
+                }
+                iterator.remove(); //避免重复
             }
         }
+    }
+
+    private void readMsg(SelectionKey key) {
+        SocketChannel channel = (SocketChannel) key.channel();
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        try {
+            int len = channel.read(buffer);
+            String msg = new String(buffer.array(), 0, len);
+            System.out.println("from client:" + msg);
+            broadCast(msg, channel);
+        } catch (IOException e) {
+            e.printStackTrace();
+            try {
+                System.out.println(channel.getRemoteAddress() + "离线了");
+                key.cancel();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+
+    private void broadCast(String msg, SocketChannel channel) throws IOException {
+        for (SelectionKey key : selector.keys()) {
+            Channel each = key.channel();
+            if (each instanceof SocketChannel) {
+                SocketChannel socketChannel = (SocketChannel) key.channel();
+                ByteBuffer buffer = ByteBuffer.wrap(msg.getBytes());
+                socketChannel.write(buffer);
+            }
+        }
+    }
+
+    private void accept() throws IOException {
+        SocketChannel accept = serverSocketChannel.accept();
+        accept.configureBlocking(false);
+        accept.register(selector, SelectionKey.OP_READ, ByteBuffer.allocate(1024));
+        System.out.println(accept.getRemoteAddress() + "上线了");
+    }
+
+    public static void main(String[] args) {
+        Server server = new Server();
+        server.listen();
     }
 }

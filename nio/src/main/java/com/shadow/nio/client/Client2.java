@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Client {
+public class Client2 {
 
     private SocketChannel socketChannel;
     private Selector selector;
@@ -20,7 +20,7 @@ public class Client {
     private Scanner scanner = new Scanner(System.in);
     private ExecutorService service = Executors.newSingleThreadExecutor();
 
-    public Client() {
+    public Client2() {
 
         try {
             InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 8888);
@@ -94,7 +94,7 @@ public class Client {
 
         private void readMsg(SelectionKey key) throws IOException {
             SocketChannel channel = (SocketChannel) key.channel();
-            ByteBuffer buffer = (ByteBuffer) key.attachment();
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
             int len = channel.read(buffer);
             String msg = new String(buffer.array(), 0, len);
             System.out.println(msg);
@@ -102,7 +102,7 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        new Client();
+        new Client2();
     }
 
 }
