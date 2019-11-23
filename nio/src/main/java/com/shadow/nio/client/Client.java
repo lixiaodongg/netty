@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 
 public class Client {
     //master_copy
+    //master
     private SocketChannel socketChannel;
     private Selector selector;
     private String userName;
